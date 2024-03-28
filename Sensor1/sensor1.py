@@ -11,7 +11,7 @@ got_time_remaining = False
 monitoring = False
 motion_detected = False
 reset_requested = False
-controller_endpoint= "http://192.168.175.94"
+controller_endpoint= "http://192.168.175.94:5000"
 
 @app.route('/actions', methods=['POST'])
 def handle_request():
