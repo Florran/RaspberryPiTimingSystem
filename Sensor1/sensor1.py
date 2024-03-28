@@ -63,8 +63,8 @@ def countdown_timer(start_time, countdown_length):
     while time.time() < end_time and got_time_remaining:
         remaining_time = end_time - time.time()
         print(format_time(int(remaining_time * 1000)), end='\r')  # Convert seconds to milliseconds
-        time.sleep(0.001) 
-        got_time_remaining = False
+        time.sleep(0.001)
+    got_time_remaining = False
     return
 
 def send_time_of_motion():
