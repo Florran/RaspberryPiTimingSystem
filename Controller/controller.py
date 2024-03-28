@@ -28,6 +28,16 @@ def timer(start_time):
         print(format_time(int(elapsed_time * 1000)), end='\r') # Convert seconds to milliseconds
         time.sleep(0.0001)
 
+def countdown_timer(start_time, countdown_length):
+    global got_time_remaining
+    end_time = start_time + countdown_length
+    got_time_remaining = True
+    while time.time() < end_time and got_time_remaining:
+        remaining_time = end_time - time.time()
+        print(format_time(int(remaining_time * 1000)), end='\r')  # Convert seconds to milliseconds
+        time.sleep(0.001)
+    got_time_remaining = False
+    return
 def format_time(milliseconds):
     minutes = (milliseconds % 3600000) // 60000
     seconds = (milliseconds % 60000) // 1000
@@ -35,7 +45,12 @@ def format_time(milliseconds):
     return f"{minutes:02}:{seconds:02}.{milliseconds:03}"
 
 def start_round(timer_length):
-    requests.post(sensor1_endpoint + '/actions', json={'action': 'activate', 'startTime': time.time(),'timerLength': timer_length})
+    start_time = time.time()
+    requests.post(sensor1_endpoint + '/actions', json={'action': 'activate', 'startTime': start_time,'timerLength': timer_length})
+    countdown_timer(start_time, timer_length)
+
+def reset():
+    requests.post(sensor1_endpoint + '/actions', json={'action': 'reset'})
 
 class Application:
     def __init__(self, master):
@@ -51,9 +66,15 @@ class Application:
         self.start_button = Button(master, text="Start", command=self.start)
         self.start_button.pack()
 
+        self.reset_button = Button(master, text="Reset", command=self.reset)
+        self.reset_button.pack()
+
     def start(self):
         timer_length = int(self.timer_length.get())
         start_round(timer_length)
+    def reset(self):
+        reset()
+    
 if __name__ == '__main__':
     threading.Thread(target=app.run, kwargs={'host': '0.0.0.0', 'debug': False}).start()
 
