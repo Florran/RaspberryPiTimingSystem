@@ -22,15 +22,9 @@ def handle_request():
         if request_data == "activate" and not monitoring:
             monitoring = True
             print("Motion detection activated!")
-            threading.Thread(target=monitor_motion).start()
             threading.Thread(target=countdown_timer, args=(60,)).start()
-            threading.Thread(target=when_motion_detected).start()
+            threading.Thread(target=monitor_motion).start()
             return 'Motion detection activated!'
-        
-        elif request_data == "deactivate" and monitoring:
-            monitoring = False
-            print("Motion detection deactivated!")
-            return 'Motion detection deactivated!'
         
         elif request_data == "reset":
             global reset_requested
@@ -45,23 +39,13 @@ def monitor_motion():
     global motion_detected
     global monitoring
 
-    while monitoring:
+    while monitoring and got_time_remaining:
         if pir.motion_detected:
             with lock:
                 print("Motion detected!")
                 motion_detected = True
                 monitoring = False
         time.sleep(0.001)
-    return
-
-def when_motion_detected():
-    global motion_detected
-    global got_time_remaining
-    while got_time_remaining:
-        if motion_detected:
-            print("Motion detected!")
-            break
-        time.sleep(0.01)
     return
 
 def format_time(milliseconds):
