@@ -33,8 +33,8 @@ def handle_request():
             return 'Motion detection deactivated!'
         
         elif request_data == "reset":
-            reset()
             reset_requested = True
+            reset()
             return 'Reset requested!'
         
         return 'Invalid command or already in desired state.'
