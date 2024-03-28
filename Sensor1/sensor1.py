@@ -60,8 +60,8 @@ def countdown_timer(start_time, countdown_length):
     global got_time_remaining
     end_time = start_time + countdown_length
     got_time_remaining = True
-    while time.perf_counter() < end_time and got_time_remaining:
-        remaining_time = end_time - time.perf_counter()
+    while time.time() < end_time and got_time_remaining:
+        remaining_time = end_time - time.time()
         print(format_time(int(remaining_time * 1000)), end='\r') #Convert seconds to milliseconds
         time.sleep(0.0001)
     got_time_remaining = False
