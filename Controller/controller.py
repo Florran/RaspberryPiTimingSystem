@@ -22,7 +22,7 @@ def timer(start_time):
     global freeze_time
     freeze_time = False
     while not freeze_time:
-        elapsed_time = time.perf_counter() - start_time
+        elapsed_time = time.time() - start_time
         print(format_time(int(elapsed_time * 1000)), end='\r') # Convert seconds to milliseconds
         time.sleep(0.0001)
 
@@ -33,5 +33,4 @@ def format_time(milliseconds):
     return f"{minutes:02}:{seconds:02}.{milliseconds:03}"
 
 if __name__ == '__main__':
-    print(time.perf_counter())
     app.run(host='0.0.0.0', debug=True)

@@ -68,7 +68,7 @@ def countdown_timer(seconds):
     return
 
 def send_time_of_motion():
-    time_of_motion = time.perf_counter()
+    time_of_motion = time.time()
     requests.post('http://192.168.175.96:5000/catch_time', json={'timeOfMotion': time_of_motion})
 
 
