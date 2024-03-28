@@ -11,24 +11,24 @@ got_time_remaining = False
 monitoring = False
 motion_detected = False
 reset_requested = False
-main_endpoint = "http://192.168.175.96/catch_time"
+controller_endpoint= "http://192.168.175.96"
 
-@app.route('/handle_request', methods=['GET'])
+@app.route('/actions', methods=['POST'])
 def handle_request():
     global monitoring
     global motion_detected
     global got_time_remaining
-    request_data = request.args.get('data')
+    request_action = request.args.get('action')
 
     with lock:
-        if request_data == "activate" and not monitoring:
+        if  request_action == "activate" and not monitoring:
             monitoring = True
             print("Motion detection activated!")
             threading.Thread(target=countdown_timer, args=(60,)).start()
             threading.Thread(target=monitor_motion).start()
             return 'Motion detection activated!'
         
-        elif request_data == "reset":
+        elif    request_action == "reset":
             global reset_requested
             reset()
             return 'Reset requested!'
@@ -55,10 +55,9 @@ def format_time(milliseconds):
     milliseconds = milliseconds % 1000
     return f"{minutes:02}:{seconds:02}.{milliseconds:03}"
 
-def countdown_timer(seconds):
+def countdown_timer(start_time, countdown_length):
     global got_time_remaining
-    start_time = time.perf_counter()
-    end_time = start_time + seconds
+    end_time = start_time + countdown_length
     got_time_remaining = True
     while time.perf_counter() < end_time and got_time_remaining:
         remaining_time = end_time - time.perf_counter()
@@ -69,7 +68,7 @@ def countdown_timer(seconds):
 
 def send_time_of_motion():
     time_of_motion = time.time()
-    requests.post('http://192.168.175.96:5000/catch_time', json={'timeOfMotion': time_of_motion})
+    requests.post(controller_endpoint + '/catch_time', json={'timeOfMotion': time_of_motion})
 
 
 def reset():
