@@ -35,7 +35,7 @@ def format_time(milliseconds):
     return f"{minutes:02}:{seconds:02}.{milliseconds:03}"
 
 def start_round(timer_length):
-    requests.post(sensor1_endpoint + '/actions', json={'action': 'activate', 'timerLength': timer_length})
+    requests.post(sensor1_endpoint + '/actions', json={'action': 'activate', 'startTime': time.time(),'timerLength': timer_length})
 
 class Application:
     def __init__(self, master):
