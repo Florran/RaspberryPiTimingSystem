@@ -11,7 +11,7 @@ GotTimeRemaining = False
 Monitoring = False
 MotionDetected = False
 ResetRequested = False
-ControllerEndpoint = "192.168.175.96:5000"
+ControllerEndpoint = "http://192.168.175.96:5000"
 
 @App.route('/HandleRequest', methods=['GET'])
 def HandleRequest():
