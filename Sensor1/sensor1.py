@@ -11,7 +11,7 @@ got_time_remaining = False
 monitoring = False
 motion_detected = False
 reset_requested = False
-controller_endpoint= "http://192.168.175.96"
+controller_endpoint= "http://192.168.175.94"
 
 @app.route('/actions', methods=['POST'])
 def handle_request():
@@ -62,8 +62,8 @@ def countdown_timer(start_time, countdown_length):
     got_time_remaining = True
     while time.time() < end_time and got_time_remaining:
         remaining_time = end_time - time.time()
-        print(format_time(int(remaining_time * 1000)), end='\r') #Convert seconds to milliseconds
-        time.sleep(0.0001)
+        print(format_time(int(remaining_time * 1000)), end='\r')  # Convert seconds to milliseconds
+        time.sleep(0.001)
     got_time_remaining = False
     return
 
