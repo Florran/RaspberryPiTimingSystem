@@ -25,7 +25,8 @@ def handle_request():
         if  request_action == "activate" and not monitoring:
             monitoring = True
             print("Motion detection activated!")
-            threading.Thread(target=countdown_timer, args=(data.get('timerLength'),)).start()
+            timer_length = data.get('timerLength')
+            threading.Thread(target=countdown_timer, args=(timer_length,)).start()
             threading.Thread(target=monitor_motion).start()
             return 'Motion detection activated!'
         

@@ -6,7 +6,7 @@ from tkinter import Tk, Label, Button, Entry, StringVar
 
 app = Flask(__name__)
 freeze_time = False
-sensor1_endpoint = "http://192.168.175.189"
+sensor1_endpoint = "http://192.168.175.189:5000"
 lock = threading.Lock()
 
 @app.route('/catch_time', methods=['POST'])
@@ -52,8 +52,8 @@ class Application:
         self.start_button.pack()
 
     def start(self):
-        start_round(self.timer_length.get())
-
+        timer_length = int(self.timer_length.get())
+        start_round(timer_length)
 if __name__ == '__main__':
     threading.Thread(target=app.run, kwargs={'host': '0.0.0.0', 'debug': False}).start()
 
