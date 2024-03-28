@@ -76,7 +76,7 @@ def countdown_timer(seconds):
     end_time = start_time + seconds
     got_time_remaining = True
     while time.perf_counter() < end_time and got_time_remaining:
-        remaining_time = end_time - time.time()
+        remaining_time = end_time - time.perf_counter()
         print(format_time(int(remaining_time * 1000)), end='\r')
         time.sleep(0.0001)
     got_time_remaining = False
