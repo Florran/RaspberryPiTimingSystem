@@ -18,13 +18,14 @@ def handle_request():
     global monitoring
     global motion_detected
     global got_time_remaining
-    request_action = request.args.get('action')
+    data = request.get_json()
+    request_action = data.get('action')
 
     with lock:
         if  request_action == "activate" and not monitoring:
             monitoring = True
             print("Motion detection activated!")
-            threading.Thread(target=countdown_timer, args=(60,)).start()
+            threading.Thread(target=countdown_timer, args=(data.get('timerLength'),)).start()
             threading.Thread(target=monitor_motion).start()
             return 'Motion detection activated!'
         
