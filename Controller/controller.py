@@ -2,7 +2,7 @@ import time
 from flask import Flask, request
 import requests
 import threading
-from tkinter import Tk, Label, Button, Entry, StringVar
+import customtkinter
 
 app = Flask(__name__)
 freeze_time = False
@@ -52,32 +52,51 @@ def start_round(timer_length):
 def reset():
     requests.post(sensor1_endpoint + '/actions', json={'action': 'reset'})
 
-class Application:
-    def __init__(self, master):
-        self.master = master
-        self.timer_length = StringVar()
+class main_gui(customtkinter.CTk):
+    def __init__(self):
+        super().__init__()
+        self.error_window = None
+        self.geometry("600x500")
+        self.title("Main")
+        self.timer_length = customtkinter.StringVar()
 
-        self.label = Label(master, text="Timer Length:")
-        self.label.pack()
+        self.grid_rowconfigure((0, 3), weight=2)
+        self.grid_columnconfigure((0, 3), weight=1)
 
-        self.entry = Entry(master, textvariable=self.timer_length)
-        self.entry.pack()
+        self.entry = customtkinter.CTkEntry(self, textvariable=self.timer_length)
+        self.entry.grid(row=0, column=2, padx=20, pady=10, sticky="ew")
 
-        self.start_button = Button(master, text="Start", command=self.start)
-        self.start_button.pack()
+        self.button = customtkinter.CTkButton(self, text="Start", width=100, height=25, command=self.start)
+        self.button.grid(row=1, column=2, padx=20, pady=10, sticky="nsew")
 
-        self.reset_button = Button(master, text="Reset", command=self.reset)
-        self.reset_button.pack()
+        self.button = customtkinter.CTkButton(self, text="Reset", width=100, height=25, command=self.reset)
+        self.button.grid(row=2, column=2, padx=20, pady=10, sticky="nsew")
 
     def start(self):
-        timer_length = int(self.timer_length.get())
-        start_round(timer_length)
+        try:
+            timer_length = int(self.timer_length.get())
+            start_round(timer_length)
+        except ValueError:
+            if self.error_window is None or not self.error_window.winfo_exists():
+                self.error_window = error_window("OBS måste vara tid i sekunder!", self)
+            else:
+                self.error_window.focus()
+
+
     def reset(self):
         reset()
+
+class error_window(customtkinter.CTkToplevel):
+    def __init__(self, error_message, master=None, *args, **kwargs):
+        super().__init__(master, *args, **kwargs)
+        self.geometry("200x100")
+
+        self.label = customtkinter.CTkLabel(self, text=error_message)
+        self.label.pack(padx=20, pady=20)
+
+        self.grab_set()
     
 if __name__ == '__main__':
     threading.Thread(target=app.run, kwargs={'host': '0.0.0.0', 'debug': False}).start()
-
-    root = Tk()
-    app = Application(root)
-    root.mainloop()
+    gui = main_gui()
+    gui.mainloop()
