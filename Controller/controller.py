@@ -10,18 +10,29 @@ from multiprocessing import Process
 
 flask_app = Flask(__name__)
 freeze_time = False
+motion_detected = threading.Event()
 sensor1_endpoint = "http://192.168.175.189:5000"
 lock = threading.Lock()
 session = Session()
 retries = Retry(total=2, backoff_factor=0.1, status_forcelist=[ 500, 502, 503, 504 ])
 session.mount('http://', HTTPAdapter(max_retries=retries))
 
+@flask_app.route('/shutdown', methods=['POST'])
+def shutdown():
+    shutdown_function = request.environ.get('werkzeug.server.shutdown')
+    if shutdown_function is None:
+        raise RuntimeError('Not running with the Werkzeug Server')
+    shutdown_function()
+    return 'Server shutting down...'
+
 @flask_app.route('/catch_time', methods=['POST'])
 def catch_time():
+    global motion_detected
     with lock:
         time_of_motion = request.json.get('timeOfMotion')
         time_of_motion = float(time_of_motion)
         if time_of_motion is not None:
+            motion_detected.set()  # Set the event to signal that motion is detected
             threading.Thread(target=timer, args=(time_of_motion,)).start()
             return 'Time received and stopwatch started', 200
         else:
@@ -36,15 +47,15 @@ def timer(start_time):
         time.sleep(0.0001)
 
 def countdown_timer(start_time, countdown_length):
-    global got_time_remaining
     end_time = start_time + countdown_length
-    got_time_remaining = True
-    while time.time() < end_time and got_time_remaining:
+    while time.time() < end_time:
+        if motion_detected.is_set():  # Check if the event is set
+            print("Motion detected, stopping countdown.")
+            break
         remaining_time = end_time - time.time()
-        print(format_time(int(remaining_time * 1000)), end='\r')  # Convert seconds to milliseconds
+        print(format_time(int(remaining_time * 1000)), end='\r')
         time.sleep(0.001)
-    got_time_remaining = False
-    return
+    motion_detected.clear()
 
 def format_time(milliseconds):
     minutes = (milliseconds % 3600000) // 60000
@@ -59,14 +70,14 @@ def start_round(timer_length):
         session.post(sensor1_endpoint + '/actions',
         json={'action': 'activate', 'startTime': start_time,'timerLength': timer_length}, 
         timeout=2.5)
-
-        countdown_timer(start_time, timer_length)
+        threading.Thread(target=countdown_timer, args=(start_time, timer_length)).start()
     except requests.exceptions.RequestException as e:
         error_message = f"{type(e).__name__}: {str(e)}"
         if gui.error_window is None or not gui.error_window.winfo_exists():
             gui.error_window = error_window(error_message, gui)
         else:
             gui.error_window.focus()
+    return
 
 def reset_sensors(from_cleanup=False):
     try:
@@ -87,7 +98,12 @@ class main_gui(customtkinter.CTk):
         self.error_window = None
         self.flask_process = flask_process
 
+        # Start the Flask app on a separate daemon thread
+        self.flask_thread = threading.Thread(target=run_flask, daemon=True)
+        self.flask_thread.start()
+
         self.bind('<Destroy>', self.cleanup)
+        self.protocol("WM_DELETE_WINDOW", self.cleanup)
 
         self.geometry("600x500")
         self.title("Main")
@@ -119,9 +135,14 @@ class main_gui(customtkinter.CTk):
         reset_sensors()
 
     def cleanup(self, event=None):
-        reset_sensors(from_cleanup=True)
-        self.flask_process.terminate()
-
+        try:
+            requests.post('http://localhost:5000/shutdown')
+        except Exception as e:
+            print(f"Error shutting down Flask server: {e}")
+        finally:
+            self.reset()
+            self.destroy()
+            
 class error_window(customtkinter.CTkToplevel):
     def __init__(self, error_message, master=None, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
@@ -140,7 +161,7 @@ class error_window(customtkinter.CTkToplevel):
         self.grab_set()
 
 def run_flask():
-        flask_app.run(host='0.0.0.0', debug=False)
+    flask_app.run(host='0.0.0.0', debug=False, use_reloader=False)
 
 if __name__ == '__main__':
     flask_process = Process(target=run_flask)
