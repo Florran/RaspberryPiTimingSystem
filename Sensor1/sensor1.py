@@ -3,6 +3,9 @@ from gpiozero import MotionSensor
 import time
 import threading
 import requests
+from requests import Session
+from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
 
 pir = MotionSensor(4)
 app = Flask(__name__)
@@ -10,8 +13,10 @@ lock = threading.Lock()
 got_time_remaining = False
 monitoring = False
 motion_detected = False
-reset_requested = False
-controller_endpoint= "http://192.168.68.94:5000"
+controller_endpoint= "http://192.168.175.182:5000"
+session = Session()
+retries = Retry(total=2, backoff_factor=0.1, status_forcelist=[ 500, 502, 503, 504 ])
+session.mount('http://', HTTPAdapter(max_retries=retries))
 
 @app.route('/actions', methods=['POST'])
 def handle_request():
@@ -69,7 +74,9 @@ def countdown_timer(start_time, countdown_length):
 
 def send_time_of_motion():
     time_of_motion = time.time()
-    requests.post(controller_endpoint + '/catch_time', json={'timeOfMotion': time_of_motion})
+    session.post(controller_endpoint + '/catch_time',
+    json={'timeOfMotion': time_of_motion},
+    timeout=0.5)
 
 
 def reset():
