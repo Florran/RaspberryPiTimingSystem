@@ -11,7 +11,7 @@ from multiprocessing import Process
 flask_app = Flask(__name__)
 freeze_time = False
 motion_detected = threading.Event()
-sensor1_endpoint = "http://192.168.175.189:5000"
+start_sensor_url = "http://192.168.175.189:5000"
 lock = threading.Lock()
 session = Session()
 retries = Retry(total=2, backoff_factor=0.1, status_forcelist=[ 500, 502, 503, 504 ])
@@ -46,7 +46,7 @@ def timer(start_time):
         print(format_time(int(elapsed_time * 1000)), end='\r') # Convert seconds to milliseconds
         time.sleep(0.0001)
 
-def countdown_timer(start_time, countdown_length):
+def countdown(start_time, countdown_length):
     end_time = start_time + countdown_length
     while time.time() < end_time:
         if motion_detected.is_set():  # Check if the event is set
@@ -67,10 +67,11 @@ def start_round(timer_length):
     global gui
     start_time = time.time()
     try:
-        session.post(sensor1_endpoint + '/actions',
+        session.post(start_sensor_url
+     + '/actions',
         json={'action': 'activate', 'startTime': start_time,'timerLength': timer_length}, 
         timeout=2.5)
-        threading.Thread(target=countdown_timer, args=(start_time, timer_length)).start()
+        threading.Thread(target=countdown, args=(start_time, timer_length)).start()
     except requests.exceptions.RequestException as e:
         error_message = f"{type(e).__name__}: {str(e)}"
         if gui.error_window is None or not gui.error_window.winfo_exists():
@@ -81,7 +82,8 @@ def start_round(timer_length):
 
 def reset_sensors(from_cleanup=False):
     try:
-        requests.post(sensor1_endpoint + '/actions',
+        requests.post(start_sensor_url
+     + '/actions',
         json={'action': 'reset'},
         timeout=0.5)
     except requests.exceptions.RequestException as e:

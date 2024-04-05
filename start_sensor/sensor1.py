@@ -13,7 +13,7 @@ lock = threading.Lock()
 got_time_remaining = False
 monitoring = False
 motion_detected = False
-controller_endpoint= "http://192.168.175.182:5000"
+controller_endpoint = "http://192.168.175.182:5000"
 session = Session()
 retries = Retry(total=2, backoff_factor=0.1, status_forcelist=[ 500, 502, 503, 504 ])
 session.mount('http://', HTTPAdapter(max_retries=retries))
