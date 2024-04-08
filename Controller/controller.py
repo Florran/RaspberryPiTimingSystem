@@ -9,9 +9,9 @@ import customtkinter
 from multiprocessing import Process
 
 flask_app = Flask(__name__)
-freeze_time = False
+freeze_time = threading.Event()
 motion_detected = threading.Event()
-sensor1_endpoint = "http://192.168.175.189:5000"
+start_sensor_url = "http://192.168.175.189:5000"
 lock = threading.Lock()
 session = Session()
 retries = Retry(total=2, backoff_factor=0.1, status_forcelist=[ 500, 502, 503, 504 ])
@@ -25,14 +25,14 @@ def shutdown():
     shutdown_function()
     return 'Server shutting down...'
 
-@flask_app.route('/catch_time', methods=['POST'])
-def catch_time():
+@flask_app.route('/start_timer', methods=['POST'])
+def start_timer():
     global motion_detected
     with lock:
         time_of_motion = request.json.get('timeOfMotion')
         time_of_motion = float(time_of_motion)
         if time_of_motion is not None:
-            motion_detected.set()  # Set the event to signal that motion is detected
+            motion_detected.set()
             threading.Thread(target=timer, args=(time_of_motion,)).start()
             return 'Time received and stopwatch started', 200
         else:
@@ -40,13 +40,13 @@ def catch_time():
 
 def timer(start_time):
     global freeze_time
-    freeze_time = False
     while not freeze_time:
         elapsed_time = time.time() - start_time
         print(format_time(int(elapsed_time * 1000)), end='\r') # Convert seconds to milliseconds
-        time.sleep(0.0001)
+        time.sleep(0.001)
+    print(format_time(int(elapsed_time * 1000)))#Final print to be changed to a GUI element or similar
 
-def countdown_timer(start_time, countdown_length):
+def countdown(start_time, countdown_length):
     end_time = start_time + countdown_length
     while time.time() < end_time:
         if motion_detected.is_set():  # Check if the event is set
@@ -67,10 +67,11 @@ def start_round(timer_length):
     global gui
     start_time = time.time()
     try:
-        session.post(sensor1_endpoint + '/actions',
+        session.post(start_sensor_url
+     + '/actions',
         json={'action': 'activate', 'startTime': start_time,'timerLength': timer_length}, 
         timeout=2.5)
-        threading.Thread(target=countdown_timer, args=(start_time, timer_length)).start()
+        threading.Thread(target=countdown, args=(start_time, timer_length)).start()
     except requests.exceptions.RequestException as e:
         error_message = f"{type(e).__name__}: {str(e)}"
         if gui.error_window is None or not gui.error_window.winfo_exists():
@@ -81,7 +82,8 @@ def start_round(timer_length):
 
 def reset_sensors(from_cleanup=False):
     try:
-        requests.post(sensor1_endpoint + '/actions',
+        requests.post(start_sensor_url
+     + '/actions',
         json={'action': 'reset'},
         timeout=0.5)
     except requests.exceptions.RequestException as e:
@@ -112,8 +114,8 @@ class main_gui(customtkinter.CTk):
         self.grid_rowconfigure((0, 3), weight=2)
         self.grid_columnconfigure((0, 3), weight=1)
 
-        self.entry = customtkinter.CTkEntry(self, textvariable=self.timer_length)
-        self.entry.grid(row=0, column=2, padx=20, pady=10, sticky="ew")
+        self.start_sensor_url = customtkinter.CTkstart_sensor_url(self, textvariable=self.timer_length)
+        self.start_sensor_url.grid(row=0, column=2, padx=20, pady=10, sticky="ew")
 
         self.button = customtkinter.CTkButton(self, text="Start", width=100, height=25, command=self.start)
         self.button.grid(row=1, column=2, padx=20, pady=10, sticky="nsew")
