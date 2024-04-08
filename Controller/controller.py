@@ -9,7 +9,7 @@ import customtkinter
 from multiprocessing import Process
 
 flask_app = Flask(__name__)
-freeze_time = False
+freeze_time = threading.Event()
 motion_detected = threading.Event()
 start_sensor_url = "http://192.168.175.189:5000"
 lock = threading.Lock()
@@ -25,14 +25,14 @@ def shutdown():
     shutdown_function()
     return 'Server shutting down...'
 
-@flask_app.route('/catch_time', methods=['POST'])
-def catch_time():
+@flask_app.route('/start_timer', methods=['POST'])
+def start_timer():
     global motion_detected
     with lock:
         time_of_motion = request.json.get('timeOfMotion')
         time_of_motion = float(time_of_motion)
         if time_of_motion is not None:
-            motion_detected.set()  # Set the event to signal that motion is detected
+            motion_detected.set()
             threading.Thread(target=timer, args=(time_of_motion,)).start()
             return 'Time received and stopwatch started', 200
         else:
@@ -40,11 +40,11 @@ def catch_time():
 
 def timer(start_time):
     global freeze_time
-    freeze_time = False
     while not freeze_time:
         elapsed_time = time.time() - start_time
         print(format_time(int(elapsed_time * 1000)), end='\r') # Convert seconds to milliseconds
-        time.sleep(0.0001)
+        time.sleep(0.001)
+    print(format_time(int(elapsed_time * 1000)))#Final print to be changed to a GUI element or similar
 
 def countdown(start_time, countdown_length):
     end_time = start_time + countdown_length
@@ -114,8 +114,8 @@ class main_gui(customtkinter.CTk):
         self.grid_rowconfigure((0, 3), weight=2)
         self.grid_columnconfigure((0, 3), weight=1)
 
-        self.entry = customtkinter.CTkEntry(self, textvariable=self.timer_length)
-        self.entry.grid(row=0, column=2, padx=20, pady=10, sticky="ew")
+        self.start_sensor_url = customtkinter.CTkstart_sensor_url(self, textvariable=self.timer_length)
+        self.start_sensor_url.grid(row=0, column=2, padx=20, pady=10, sticky="ew")
 
         self.button = customtkinter.CTkButton(self, text="Start", width=100, height=25, command=self.start)
         self.button.grid(row=1, column=2, padx=20, pady=10, sticky="nsew")
