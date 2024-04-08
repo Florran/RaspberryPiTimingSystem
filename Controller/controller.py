@@ -56,6 +56,9 @@ def countdown(start_time, countdown_length):
         print(format_time(int(remaining_time * 1000)), end='\r')
         time.sleep(0.001)
     motion_detected.clear()
+    session.post(start_sensor_url + '/stop',
+    json={}, 
+    timeout=2.5)
 
 def format_time(milliseconds):
     minutes = (milliseconds % 3600000) // 60000
@@ -67,9 +70,8 @@ def start_round(timer_length):
     global gui
     start_time = time.time()
     try:
-        session.post(start_sensor_url
-     + '/actions',
-        json={'action': 'activate', 'startTime': start_time,'timerLength': timer_length}, 
+        session.post(start_sensor_url + '/start',
+        json={'startTime': start_time,'timerLength': timer_length}, 
         timeout=2.5)
         threading.Thread(target=countdown, args=(start_time, timer_length)).start()
     except requests.exceptions.RequestException as e:
@@ -83,8 +85,8 @@ def start_round(timer_length):
 def reset_sensors(from_cleanup=False):
     try:
         requests.post(start_sensor_url
-     + '/actions',
-        json={'action': 'reset'},
+     + '/reset',
+        json={},
         timeout=0.5)
     except requests.exceptions.RequestException as e:
         error_message = str(e)
