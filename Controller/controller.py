@@ -45,12 +45,15 @@ def countdown(start_time, countdown_length):
             print("Motion detected, stopping countdown.")
             break
         remaining_time = end_time - time.time()
-        print(format_time(int(remaining_time * 1000)), end='\r')
+        remaining_time_formatted = format_time(int(remaining_time * 1000))
+        gui.countdown_label.configure(text=remaining_time_formatted)
         time.sleep(0.001)
     motion_detected.clear()
+    gui.countdown_label.configure(text=remaining_time_formatted)
     session.post(start_sensor_url + '/stop',
     json={}, 
     timeout=2.5)
+
 
 def format_time(milliseconds):
     minutes = (milliseconds % 3600000) // 60000
@@ -94,6 +97,8 @@ class main_gui(customtkinter.CTk):
         self.error_window = None
         self.flask_process = flask_process
 
+        #self.attributes("-fullscreen", True) uncomment this line to make the window fullscreen
+
         # Start the Flask app on a separate daemon thread
         self.flask_thread = threading.Thread(target=run_flask, daemon=True)
         self.flask_thread.start()
@@ -113,6 +118,9 @@ class main_gui(customtkinter.CTk):
 
         self.button = customtkinter.CTkButton(self, text="Reset", width=100, height=25, command=self.reset)
         self.button.grid(row=2, column=2, padx=20, pady=10, sticky="nsew")
+
+        self.countdown_label = customtkinter.CTkLabel(self, text="")
+        self.countdown_label.grid(row=3, column=2, padx=20, pady=10, sticky="ew")
 
     def start(self):
         try:

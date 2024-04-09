@@ -13,7 +13,7 @@ controller_endpoint= "http://192.168.68.94:5000"
 @app.route('/start', methods=['POST'])
 def start():
     with lock:
-        if  not monitoring:
+        if not monitoring.is_set():
             monitoring.set()
             print("Motion detection activated!")
             threading.Thread(target=monitor_motion).start()
