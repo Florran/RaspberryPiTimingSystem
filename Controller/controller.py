@@ -89,8 +89,7 @@ def reset_system():
     try:
         with lock:
             start_motion_detected.set()
-            while start_motion_detected.is_set():
-                time.sleep(0.01)
+            stop_motion_detected.set()
     except requests.exceptions.RequestException as e:
         error_message = str(e)
         if gui.winfo_exists():
