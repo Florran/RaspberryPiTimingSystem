@@ -60,9 +60,6 @@ def countdown(start_time, countdown_length):
         time.sleep(0.001)
     start_motion_detected.clear()
     gui.time_label.configure(text="")
-    session.post(start_sensor_url + '/stop',
-    json={}, 
-    timeout=2.5)
 
 def format_time(milliseconds):
     minutes = (milliseconds % 3600000) // 60000
@@ -91,6 +88,9 @@ def reset_system():
         with lock:
             start_motion_detected.set()
             stop_motion_detected.set()
+            session.post(start_sensor_url + '/stop',
+            json={}, 
+            timeout=2.5)
     except requests.exceptions.RequestException as e:
         error_message = str(e)
         if gui.winfo_exists():
