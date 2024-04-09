@@ -17,14 +17,6 @@ session = Session()
 retries = Retry(total=2, backoff_factor=0.1, status_forcelist=[ 500, 502, 503, 504 ])
 session.mount('http://', HTTPAdapter(max_retries=retries))
 
-@flask_app.route('/shutdown', methods=['POST'])
-def shutdown():
-    shutdown_function = request.environ.get('werkzeug.server.shutdown')
-    if shutdown_function is None:
-        raise RuntimeError('Not running with the Werkzeug Server')
-    shutdown_function()
-    return 'Server shutting down...'
-
 @flask_app.route('/start_timer', methods=['POST'])
 def start_timer():
     global motion_detected
@@ -71,7 +63,7 @@ def start_round(timer_length):
     start_time = time.time()
     try:
         session.post(start_sensor_url + '/start',
-        json={'startTime': start_time,'timerLength': timer_length}, 
+        json={}, 
         timeout=2.5)
         threading.Thread(target=countdown, args=(start_time, timer_length)).start()
     except requests.exceptions.RequestException as e:
@@ -106,9 +98,6 @@ class main_gui(customtkinter.CTk):
         self.flask_thread = threading.Thread(target=run_flask, daemon=True)
         self.flask_thread.start()
 
-        self.bind('<Destroy>', self.cleanup)
-        self.protocol("WM_DELETE_WINDOW", self.cleanup)
-
         self.geometry("600x500")
         self.title("Main")
         self.timer_length = customtkinter.StringVar()
@@ -116,7 +105,7 @@ class main_gui(customtkinter.CTk):
         self.grid_rowconfigure((0, 3), weight=2)
         self.grid_columnconfigure((0, 3), weight=1)
 
-        self.start_sensor_url = customtkinter.CTkstart_sensor_url(self, textvariable=self.timer_length)
+        self.start_sensor_url = customtkinter.CTkEntry(self, textvariable=self.timer_length, placeholder_text="Countdown Time")
         self.start_sensor_url.grid(row=0, column=2, padx=20, pady=10, sticky="ew")
 
         self.button = customtkinter.CTkButton(self, text="Start", width=100, height=25, command=self.start)
@@ -137,15 +126,6 @@ class main_gui(customtkinter.CTk):
 
     def reset(self):
         reset_sensors()
-
-    def cleanup(self, event=None):
-        try:
-            requests.post('http://localhost:5000/shutdown')
-        except Exception as e:
-            print(f"Error shutting down Flask server: {e}")
-        finally:
-            self.reset()
-            self.destroy()
             
 class error_window(customtkinter.CTkToplevel):
     def __init__(self, error_message, master=None, *args, **kwargs):
