@@ -46,6 +46,7 @@ def timer(start_time):
         time_formatted = format_time(int(elapsed_time * 1000)) # Convert seconds to milliseconds
         gui.time_label.configure(text=time_formatted)
         time.sleep(0.001)
+    stop_motion_detected.clear()
 
 def countdown(start_time, countdown_length):
     end_time = start_time + countdown_length

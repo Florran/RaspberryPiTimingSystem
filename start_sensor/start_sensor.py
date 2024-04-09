@@ -32,6 +32,7 @@ def stop():
 def reset():
     with lock:
         monitoring.clear()
+        pir.motion_detected = False
         return 'Reset requested!'
 
 def monitor_motion():
