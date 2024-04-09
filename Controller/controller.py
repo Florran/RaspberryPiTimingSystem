@@ -10,7 +10,8 @@ from multiprocessing import Process
 
 flask_app = Flask(__name__)
 freeze_time = threading.Event()
-motion_detected = threading.Event()
+start_motion_detected = threading.Event()
+stop_motion_detected = threading.Event()
 start_sensor_url = "http://192.168.175.189:5000"
 lock = threading.Lock()
 session = Session()
@@ -19,41 +20,48 @@ session.mount('http://', HTTPAdapter(max_retries=retries))
 
 @flask_app.route('/start_timer', methods=['POST'])
 def start_timer():
-    global motion_detected
+    global start_motion_detected
     with lock:
         time_of_motion = request.json.get('timeOfMotion')
         time_of_motion = float(time_of_motion)
         if time_of_motion is not None:
-            motion_detected.set()
+            start_motion_detected.set()
             threading.Thread(target=timer, args=(time_of_motion,)).start()
             return 'Time received and stopwatch started', 200
         else:
             return 'timeOfMotion is of type None', 400
 
+@flask_app.route('/stop_timer', methods=['POST'])
+def stop_timer():
+    global stop_motion_detected
+    with lock:
+        stop_motion_detected.set()
+        return 'Time received and stopwatch stopped', 200
+
+
 def timer(start_time):
-    global freeze_time
-    while not freeze_time:
+    global stop_motion_detected
+    while not stop_motion_detected.is_set():
         elapsed_time = time.time() - start_time
-        print(format_time(int(elapsed_time * 1000)), end='\r') # Convert seconds to milliseconds
+        time_formatted = format_time(int(elapsed_time * 1000)) # Convert seconds to milliseconds
+        gui.time_label.configure(text=time_formatted)
         time.sleep(0.001)
-    print(format_time(int(elapsed_time * 1000)))#Final print to be changed to a GUI element or similar
 
 def countdown(start_time, countdown_length):
     end_time = start_time + countdown_length
     while time.time() < end_time:
-        if motion_detected.is_set():  # Check if the event is set
+        if start_motion_detected.is_set():
             print("Motion detected, stopping countdown.")
             break
         remaining_time = end_time - time.time()
         remaining_time_formatted = format_time(int(remaining_time * 1000))
-        gui.countdown_label.configure(text=remaining_time_formatted)
+        gui.time_label.configure(text=remaining_time_formatted)
         time.sleep(0.001)
-    motion_detected.clear()
-    gui.countdown_label.configure(text=remaining_time_formatted)
+    start_motion_detected.clear()
+    gui.time_label.configure(text="")
     session.post(start_sensor_url + '/stop',
     json={}, 
     timeout=2.5)
-
 
 def format_time(milliseconds):
     minutes = (milliseconds % 3600000) // 60000
@@ -77,15 +85,15 @@ def start_round(timer_length):
             gui.error_window.focus()
     return
 
-def reset_sensors(from_cleanup=False):
+def reset_system():
     try:
-        requests.post(start_sensor_url
-     + '/reset',
-        json={},
-        timeout=0.5)
+        with lock:
+            start_motion_detected.set()
+            while start_motion_detected.is_set():
+                time.sleep(0.01)
     except requests.exceptions.RequestException as e:
         error_message = str(e)
-        if not from_cleanup and gui.winfo_exists():
+        if gui.winfo_exists():
             if gui.error_window is None or not gui.error_window.winfo_exists():
                 gui.error_window = error_window(error_message, gui)
             else:
@@ -119,8 +127,8 @@ class main_gui(customtkinter.CTk):
         self.button = customtkinter.CTkButton(self, text="Reset", width=100, height=25, command=self.reset)
         self.button.grid(row=2, column=2, padx=20, pady=10, sticky="nsew")
 
-        self.countdown_label = customtkinter.CTkLabel(self, text="")
-        self.countdown_label.grid(row=3, column=2, padx=20, pady=10, sticky="ew")
+        self.time_label = customtkinter.CTkLabel(self, text="")
+        self.time_label.grid(row=3, column=2, padx=20, pady=10, sticky="ew")
 
     def start(self):
         try:
@@ -133,7 +141,7 @@ class main_gui(customtkinter.CTk):
                 self.error_window.focus()
 
     def reset(self):
-        reset_sensors()
+        threading.Thread(target=reset_system()).start()
             
 class error_window(customtkinter.CTkToplevel):
     def __init__(self, error_message, master=None, *args, **kwargs):
