@@ -37,6 +37,7 @@ def reset():
 
 def monitor_motion():
     global monitoring
+    monitoring.wait()
     while monitoring.is_set():
         if pir.motion_detected:
             with lock:
