@@ -13,6 +13,7 @@ freeze_time = threading.Event()
 start_motion_detected = threading.Event()
 stop_motion_detected = threading.Event()
 start_sensor_url = "http://192.168.175.189:5000"
+stop_sensor_utl = "http://192.168.175.211:5000"
 lock = threading.Lock()
 session = Session()
 retries = Retry(total=2, backoff_factor=0.1, status_forcelist=[ 500, 502, 503, 504 ])
@@ -83,6 +84,18 @@ def start_round(timer_length):
             gui.error_window.focus()
     return
 
+def stop_round():
+    try:
+        session.post(stop_sensor_utl + '/start',
+        json={}, 
+        timeout=2.5)
+    except requests.exceptions.RequestException as e:
+        error_message = str(e)
+        if gui.error_window is None or not gui.error_window.winfo_exists():
+            gui.error_window = error_window(error_message, gui)
+        else:
+            gui.error_window.focus()
+
 def reset_system():
     try:
         with lock:
@@ -102,6 +115,8 @@ def reset_system():
 class main_gui(customtkinter.CTk):
     def __init__(self, flask_process):
         super().__init__()
+        self.started = False
+
         self.error_window = None
         self.flask_process = flask_process
 
@@ -121,8 +136,12 @@ class main_gui(customtkinter.CTk):
         self.start_sensor_url = customtkinter.CTkEntry(self, textvariable=self.timer_length, placeholder_text="Countdown Time")
         self.start_sensor_url.grid(row=0, column=2, padx=20, pady=10, sticky="ew")
 
-        self.button = customtkinter.CTkButton(self, text="Start", width=100, height=25, command=self.start)
-        self.button.grid(row=1, column=2, padx=20, pady=10, sticky="nsew")
+        if not self.started:
+            self.button = customtkinter.CTkButton(self, text="Start", width=100, height=25, command=self.start)
+            self.button.grid(row=1, column=2, padx=20, pady=10, sticky="nsew")
+        else:
+            self.button = customtkinter.CTkButton(self, text="Start Exit Sensor", width=100, height=25, command=self.start_stop_sensor)
+            self.button.grid(row=1, column=2, padx=20, pady=10, sticky="nsew")
 
         self.button = customtkinter.CTkButton(self, text="Reset", width=100, height=25, command=self.reset)
         self.button.grid(row=2, column=2, padx=20, pady=10, sticky="nsew")
@@ -134,12 +153,21 @@ class main_gui(customtkinter.CTk):
         try:
             timer_length = int(self.timer_length.get())
             start_round(timer_length)
+            self.started = True
         except ValueError:
             if self.error_window is None or not self.error_window.winfo_exists():
                 self.error_window = error_window("OBS måste vara tid i sekunder!", self)
             else:
                 self.error_window.focus()
-
+    def start_stop_sensor(self):
+        try:
+            stop_round()
+            self.started = True
+        except ValueError:
+            if self.error_window is None or not self.error_window.winfo_exists():
+                self.error_window = error_window("Något gick fel!", self)
+            else:
+                self.error_window.focus()
     def reset(self):
         threading.Thread(target=reset_system()).start()
             
