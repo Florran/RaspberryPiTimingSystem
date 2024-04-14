@@ -126,7 +126,7 @@ class main_gui(customtkinter.CTk):
         self.geometry("600x500")
         self.title("Controller for timing system")
 
-        self.grid_rowconfigure((0, 5), weight=2)
+        self.grid_rowconfigure((0, 6), weight=2)
         self.columnconfigure(1, weight=1)
         self.columnconfigure(2, weight=1)
         self.columnconfigure(3, weight=1)
@@ -136,23 +136,23 @@ class main_gui(customtkinter.CTk):
         self.header.grid(row=0, column=2, padx=20, pady=10, sticky="ews", columnspan="2")
 
         self.time_entry = customtkinter.CTkEntry(self, placeholder_text="Countdown Time", width=810, justify="center")
-        self.time_entry.grid(row=1, column=2, padx=20, pady=10, sticky="ns", columnspan="2")
+        self.time_entry.grid(row=2, column=2, padx=20, pady=10, sticky="ns", columnspan="2")
 
         if not self.started:
-            self.start_button = customtkinter.CTkButton(self, text="Start", width=400, height=40, command=self.start, font=("Arial", 24), fg_color="#73f09b", text_color="black")
+            self.start_button = customtkinter.CTkButton(self, text="Start", width=400, height=100, command=self.start, font=("Arial", 24), fg_color="#73f09b", hover_color="#4b9d65",text_color="black")
         else:
-            self.start_button = customtkinter.CTkButton(self, text="Start Exit Sensor", width=400, height=40, command=self.start_stop_sensor, font=("Arial", 24), fg_color="#73f09b", text_color="black")
+            self.start_button = customtkinter.CTkButton(self, text="Start Exit Sensor", width=400, height=100, command=self.start_stop_sensor, font=("Arial", 24), fg_color="#73f09b", text_color="black")
 
-        self.start_button.grid(row=2, column=2, padx=5, pady=10, sticky="nse", rowspan="2")
+        self.start_button.grid(row=3, column=2, padx=5, pady=10, sticky="nse", rowspan="2")
 
-        self.reset_button = customtkinter.CTkButton(self, text="Reset", width=400, height=40, command=self.reset, font=("Arial", 24), fg_color="#f07381", text_color="black")
-        self.reset_button.grid(row=2, column=3, padx=5, pady=10, sticky="nsw", rowspan="2")
+        self.reset_button = customtkinter.CTkButton(self, text="Reset", width=400, height=100, command=self.reset, font=("Arial", 24), fg_color="#f07381", hover_color="#893c44",text_color="black")
+        self.reset_button.grid(row=3, column=3, padx=5, pady=10, sticky="nsw", rowspan="2")
 
-        self.time_label = customtkinter.CTkLabel(self, text="00:00.000", font=("Arial", 90))
-        self.time_label.grid(row=2, column=1, padx=20, pady=10, sticky="nsew", rowspan="2")
+        self.time_label = customtkinter.CTkLabel(self, text="00:00.000", font=("Arial", 90), anchor="center")
+        self.time_label.grid(row=1, column=2, padx=0, pady=10, sticky="nsew", columnspan="2")
         
         self.author_label = customtkinter.CTkLabel(self, text="Made by Florran", font=("Arial", 12))
-        self.author_label.grid(row=5, column=2, padx=20, pady=10, sticky="n", columnspan="2")
+        self.author_label.grid(row=6, column=2, padx=20, pady=10, sticky="n", columnspan="2")
 
     def start(self):
         try:
