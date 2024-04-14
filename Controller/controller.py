@@ -23,14 +23,11 @@ session.mount('http://', HTTPAdapter(max_retries=retries))
 def start_timer():
     global start_motion_detected
     with lock:
-        time_of_motion = request.json.get('timeOfMotion')
-        time_of_motion = float(time_of_motion)
-        if time_of_motion is not None:
-            start_motion_detected.set()
-            threading.Thread(target=timer, args=(time_of_motion,)).start()
-            return 'Time received and stopwatch started', 200
-        else:
-            return 'timeOfMotion is of type None', 400
+        time_of_motion = time.time()
+        start_motion_detected.set()
+        threading.Thread(target=timer, args=(time_of_motion,)).start()
+        return 'Stopwatch started', 200
+
 
 @flask_app.route('/stop_timer', methods=['POST'])
 def stop_timer():
@@ -120,38 +117,46 @@ class main_gui(customtkinter.CTk):
         self.error_window = None
         self.flask_process = flask_process
 
-        #self.attributes("-fullscreen", True) uncomment this line to make the window fullscreen
+        #self.attributes("-fullscreen", True)
 
         # Start the Flask app on a separate daemon thread
         self.flask_thread = threading.Thread(target=run_flask, daemon=True)
         self.flask_thread.start()
 
         self.geometry("600x500")
-        self.title("Main")
-        self.timer_length = customtkinter.StringVar()
+        self.title("Controller for timing system")
 
-        self.grid_rowconfigure((0, 3), weight=2)
-        self.grid_columnconfigure((0, 3), weight=1)
+        self.grid_rowconfigure((0, 5), weight=2)
+        self.columnconfigure(1, weight=1)
+        self.columnconfigure(2, weight=1)
+        self.columnconfigure(3, weight=1)
+        self.columnconfigure(4, weight=1)
+        
+        self.header = customtkinter.CTkLabel(self, text="Timing System", font=("Arial", 24))
+        self.header.grid(row=0, column=2, padx=20, pady=10, sticky="ews", columnspan="2")
 
-        self.start_sensor_url = customtkinter.CTkEntry(self, textvariable=self.timer_length, placeholder_text="Countdown Time")
-        self.start_sensor_url.grid(row=0, column=2, padx=20, pady=10, sticky="ew")
+        self.time_entry = customtkinter.CTkEntry(self, placeholder_text="Countdown Time", width=810, justify="center")
+        self.time_entry.grid(row=1, column=2, padx=20, pady=10, sticky="ns", columnspan="2")
 
         if not self.started:
-            self.button = customtkinter.CTkButton(self, text="Start", width=100, height=25, command=self.start)
-            self.button.grid(row=1, column=2, padx=20, pady=10, sticky="nsew")
+            self.start_button = customtkinter.CTkButton(self, text="Start", width=400, height=40, command=self.start, font=("Arial", 24), fg_color="#73f09b", text_color="black")
         else:
-            self.button = customtkinter.CTkButton(self, text="Start Exit Sensor", width=100, height=25, command=self.start_stop_sensor)
-            self.button.grid(row=1, column=2, padx=20, pady=10, sticky="nsew")
+            self.start_button = customtkinter.CTkButton(self, text="Start Exit Sensor", width=400, height=40, command=self.start_stop_sensor, font=("Arial", 24), fg_color="#73f09b", text_color="black")
 
-        self.button = customtkinter.CTkButton(self, text="Reset", width=100, height=25, command=self.reset)
-        self.button.grid(row=2, column=2, padx=20, pady=10, sticky="nsew")
+        self.start_button.grid(row=2, column=2, padx=5, pady=10, sticky="nse", rowspan="2")
 
-        self.time_label = customtkinter.CTkLabel(self, text="")
-        self.time_label.grid(row=3, column=2, padx=20, pady=10, sticky="ew")
+        self.reset_button = customtkinter.CTkButton(self, text="Reset", width=400, height=40, command=self.reset, font=("Arial", 24), fg_color="#f07381", text_color="black")
+        self.reset_button.grid(row=2, column=3, padx=5, pady=10, sticky="nsw", rowspan="2")
+
+        self.time_label = customtkinter.CTkLabel(self, text="00:00.000", font=("Arial", 90))
+        self.time_label.grid(row=2, column=1, padx=20, pady=10, sticky="nsew", rowspan="2")
+        
+        self.author_label = customtkinter.CTkLabel(self, text="Made by Florran", font=("Arial", 12))
+        self.author_label.grid(row=5, column=2, padx=20, pady=10, sticky="n", columnspan="2")
 
     def start(self):
         try:
-            timer_length = int(self.timer_length.get())
+            timer_length = int(self.time_entry.get())
             start_round(timer_length)
             self.started = True
         except ValueError:

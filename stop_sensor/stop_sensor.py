@@ -8,12 +8,12 @@ pir = MotionSensor(4)
 app = Flask(__name__)
 lock = threading.Lock()
 monitoring = threading.Event()
-controller_endpoint= "http://192.168.68.90:5000"
+controller_endpoint= "http://192.168.68.91:5000"
 
 @app.route('/start', methods=['POST'])
 def start():
     with lock:
-        if  not monitoring:
+        if not monitoring: 
             monitoring.set()
             print("Motion detection activated!")
             threading.Thread(target=monitor_motion).start()
@@ -35,13 +35,12 @@ def monitor_motion():
             with lock:
                 print("Motion detected!")
                 monitoring.clear()
-                post_current_time()
+                threading.Thread(target=signal_movment()).start()
         time.sleep(0.001)
     return
 
-def post_current_time():
-    time_of_motion = time.time()
-    requests.post(controller_endpoint + '/start_timer', json={'timeOfMotion': time_of_motion})
+def signal_movment():
+    requests.post(controller_endpoint + '/start_timer', json={})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)

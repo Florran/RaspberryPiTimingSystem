@@ -37,19 +37,17 @@ def reset():
 
 def monitor_motion():
     global monitoring
-    monitoring.wait()
     while monitoring.is_set():
         if pir.motion_detected:
             with lock:
                 print("Motion detected!")
                 monitoring.clear()
-                post_current_time()
+                threading.Thread(target=signal_movment()).start()
         time.sleep(0.001)
     return
 
-def post_current_time():
-    time_of_motion = time.time()
-    requests.post(controller_endpoint + '/start_timer', json={'timeOfMotion': time_of_motion})
+def signal_movment():
+    requests.post(controller_endpoint + '/start_timer', json={})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
