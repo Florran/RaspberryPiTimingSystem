@@ -58,6 +58,7 @@ def countdown(start_time, countdown_length):
         time.sleep(0.001)
     start_motion_detected.clear()
     gui.time_label.configure(text="")
+    return
 
 def format_time(milliseconds):
     minutes = (milliseconds % 3600000) // 60000
@@ -72,6 +73,8 @@ def start_round(timer_length):
         session.post(start_sensor_url + '/start',
         json={}, 
         timeout=2.5)
+        start_motion_detected.clear()
+        stop_motion_detected.clear()
         threading.Thread(target=countdown, args=(start_time, timer_length)).start()
     except requests.exceptions.RequestException as e:
         error_message = f"{type(e).__name__}: {str(e)}"
@@ -145,13 +148,16 @@ class main_gui(customtkinter.CTk):
 
         self.start_button.grid(row=3, column=2, padx=5, pady=10, sticky="nse", rowspan="2")
 
-        self.reset_button = customtkinter.CTkButton(self, text="Reset", width=400, height=100, command=self.reset, font=("Arial", 24), fg_color="#f07381", hover_color="#893c44",text_color="black")
+        self.reset_button = customtkinter.CTkButton(self, text="Reset", width=200, height=100, command=self.reset, font=("Arial", 24), fg_color="#f07381", hover_color="#893c44",text_color="black")
         self.reset_button.grid(row=3, column=3, padx=5, pady=10, sticky="nsw", rowspan="2")
+
+        self.zero_button = customtkinter.CTkButton(self, text="Zero", width=190, height=100, command=self.set_time_zero, font=("Arial", 24), fg_color="#f1f76d", hover_color="#c5cd24",text_color="black")
+        self.zero_button.grid(row=3, column=3, padx=(210, 0), pady=10, sticky="nsw", rowspan="2")
 
         self.time_label = customtkinter.CTkLabel(self, text="00:00.000", font=("Arial", 90), anchor="center")
         self.time_label.grid(row=1, column=2, padx=0, pady=10, sticky="nsew", columnspan="2")
         
-        self.author_label = customtkinter.CTkLabel(self, text="Made by Florran", font=("Arial", 12))
+        self.author_label = customtkinter.CTkLabel(self, text="Made by Anton", font=("Arial", 12))
         self.author_label.grid(row=6, column=2, padx=20, pady=10, sticky="n", columnspan="2")
 
     def start(self):
@@ -176,6 +182,8 @@ class main_gui(customtkinter.CTk):
     def reset(self):
         threading.Thread(target=reset_system()).start()
         return
+    def set_time_zero(self):
+        self.time_label.configure(text="00:00.000")
             
 class error_window(customtkinter.CTkToplevel):
     def __init__(self, error_message, master=None, *args, **kwargs):
