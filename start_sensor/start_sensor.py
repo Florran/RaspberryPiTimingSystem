@@ -8,7 +8,7 @@ pir = MotionSensor(4)
 app = Flask(__name__)
 lock = threading.Lock()
 monitoring = threading.Event()
-controller_endpoint= "http://192.168.68.90:5000"
+controller_endpoint= "http://192.168.110.182:5000"
 
 @app.route('/start', methods=['POST'])
 def start():

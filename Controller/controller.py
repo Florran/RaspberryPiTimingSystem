@@ -12,7 +12,7 @@ flask_app = Flask(__name__)
 freeze_time = threading.Event()
 start_motion_detected = threading.Event()
 stop_motion_detected = threading.Event()
-start_sensor_url = "http://192.168.175.189:5000"
+start_sensor_url = "http://192.168.110.189:5000"
 stop_sensor_utl = "http://192.168.175.211:5000"
 lock = threading.Lock()
 session = Session()
@@ -175,6 +175,7 @@ class main_gui(customtkinter.CTk):
                 self.error_window.focus()
     def reset(self):
         threading.Thread(target=reset_system()).start()
+        return
             
 class error_window(customtkinter.CTkToplevel):
     def __init__(self, error_message, master=None, *args, **kwargs):
