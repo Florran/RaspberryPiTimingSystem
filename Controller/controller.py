@@ -13,7 +13,7 @@ freeze_time = threading.Event()
 start_motion_detected = threading.Event()
 stop_motion_detected = threading.Event()
 start_sensor_url = "http://192.168.110.189:5000"
-stop_sensor_url = "http://192.168.175.211:5000"
+stop_sensor_url = "http://192.168.110.211:5000"
 lock = threading.Lock()
 session = Session()
 retries = Retry(total=2, backoff_factor=0.1, status_forcelist=[ 500, 502, 503, 504 ])
