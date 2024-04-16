@@ -157,7 +157,7 @@ class main_gui(customtkinter.CTk):
     def start(self):
         try:
             timer_length = int(self.time_entry.get())
-            start_round(timer_length)
+            threading.Thread(target=start_round, args=(timer_length,)).start()
             self.started = True
         except ValueError:
             if self.error_window is None or not self.error_window.winfo_exists():
