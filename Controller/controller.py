@@ -13,7 +13,7 @@ freeze_time = threading.Event()
 start_motion_detected = threading.Event()
 stop_motion_detected = threading.Event()
 start_sensor_url = "http://192.168.110.189:5000"
-stop_sensor_utl = "http://192.168.175.211:5000"
+stop_sensor_url = "http://192.168.175.211:5000"
 lock = threading.Lock()
 session = Session()
 retries = Retry(total=2, backoff_factor=0.1, status_forcelist=[ 500, 502, 503, 504 ])
@@ -84,9 +84,9 @@ def start_round(timer_length):
             gui.error_window.focus()
     return
 
-def stop_round():
+def start_stopping_of_round():
     try:
-        session.post(stop_sensor_utl + '/start',
+        session.post(stop_sensor_url + '/start',
         json={}, 
         timeout=2.5)
     except requests.exceptions.RequestException as e:
@@ -96,12 +96,16 @@ def stop_round():
         else:
             gui.error_window.focus()
 
+@flask_app.route('/reset_system', methods=['POST'])
 def reset_system():
     try:
         with lock:
             start_motion_detected.set()
             stop_motion_detected.set()
             session.post(start_sensor_url + '/stop',
+            json={}, 
+            timeout=2.5)
+            session.post(stop_sensor_url + '/stop',
             json={}, 
             timeout=2.5)
     except requests.exceptions.RequestException as e:
@@ -148,10 +152,10 @@ class main_gui(customtkinter.CTk):
 
         self.start_button.grid(row=3, column=2, padx=5, pady=10, sticky="nse", rowspan="2")
 
-        self.reset_button = customtkinter.CTkButton(self, text="Reset", width=200, height=100, command=self.reset, font=("Arial", 24), fg_color="#f07381", hover_color="#893c44",text_color="black")
+        self.reset_button = customtkinter.CTkButton(self, text="Stop", width=200, height=100, command=self.reset, font=("Arial", 24), fg_color="#f07381", hover_color="#893c44",text_color="black")
         self.reset_button.grid(row=3, column=3, padx=5, pady=10, sticky="nsw", rowspan="2")
 
-        self.zero_button = customtkinter.CTkButton(self, text="Zero", width=190, height=100, command=self.set_time_zero, font=("Arial", 24), fg_color="#f1f76d", hover_color="#c5cd24",text_color="black")
+        self.zero_button = customtkinter.CTkButton(self, text="Reset", width=190, height=100, command=self.set_time_zero, font=("Arial", 24), fg_color="#f1f76d", hover_color="#c5cd24",text_color="black")
         self.zero_button.grid(row=3, column=3, padx=(210, 0), pady=10, sticky="nsw", rowspan="2")
 
         self.time_label = customtkinter.CTkLabel(self, text="00:00.000", font=("Arial", 90), anchor="center")
@@ -172,7 +176,7 @@ class main_gui(customtkinter.CTk):
                 self.error_window.focus()
     def start_stop_sensor(self):
         try:
-            stop_round()
+            start_stopping_of_round()
             self.started = True
         except ValueError:
             if self.error_window is None or not self.error_window.winfo_exists():

@@ -35,12 +35,13 @@ def monitor_motion():
             with lock:
                 print("Motion detected!")
                 monitoring.clear()
-                threading.Thread(target=signal_movment()).start()
+                threading.Thread(target=signal_movment).start()
+                time.sleep(1)
         time.sleep(0.001)
     return
 
 def signal_movment():
-    requests.post(controller_endpoint + '/start_timer', json={})
+    requests.post(controller_endpoint + '/reset_system', json={})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
